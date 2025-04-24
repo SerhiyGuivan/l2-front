@@ -1,0 +1,31 @@
+html, body, #__nuxt {
+  height: 100%;
+  margin: 0;
+}
+
+:root {
+  --g-block-bg: #1f2228
+}
+
+body {
+  background-color: #191919;
+  color: #fff;
+}
+
+input {
+  color-scheme: dark;
+}
+
+//a {
+//  color: var(--p-primary-color);
+//  &:hover {
+//    color: var(--p-primary-hover-color);
+//  }
+//}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
