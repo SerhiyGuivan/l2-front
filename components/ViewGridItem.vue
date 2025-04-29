@@ -33,11 +33,11 @@
 <style lang="scss" scoped>
  .view-grid-item {
    background: var(--g-block-bg);
-   padding: 15px 15px 20px;
+   padding: 15px;
    border-radius: 12px;
    display: flex;
    flex-direction: column;
-   gap: 10px;
+   gap: 15px;
    cursor: pointer;
    &__img {
      position: relative;
@@ -62,14 +62,12 @@
      bottom: 10px;
    }
    &__title {
-     font-weight: 600;
-     font-size: 24px;
+     @include heading-3;
      color: #fff;
    }
    &__date {
      color: var(--p-text-muted-color);
-     font-weight: 400;
-     font-size: 18px;
+     @include heading-4;
    }
    &__description {
      font-weight: 400;

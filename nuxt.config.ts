@@ -202,12 +202,20 @@ export default defineNuxtConfig({
     modules: [
         '@primevue/nuxt-module',
         '@nuxtjs/mdc',
-        '@nuxtjs/supabase'
+        '@nuxtjs/supabase',
+        'nuxt-viewport'
     ],
     vite: {
         plugins: [
             tailwindcss(),
         ],
+        css: {
+            preprocessorOptions: {
+                scss: {
+                    additionalData: `@use "~/assets/mixins" as *;`
+                }
+            }
+        }
     },
     supabase: {
         redirect: false

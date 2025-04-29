@@ -10,20 +10,48 @@
     <div class="events-single__body">
       <EventsSingleContent v-if="event.content && !event.closed" :value="event.content" class="events-single__content" />
       <EventsSingleContent v-if="event.result" :value="event.result" class="events-single__content" />
-      <div class="events-single__participation-list participation-list" v-if="participationList.length > 0">
-        <div class="participation-list__subheading">Предварительные участники ивента</div>
-        <DataTable
-          :value="participationList">
-          <Column field="username" header="Никнейм"></Column>
-          <Column field="classes" header="Желаемый класс"></Column>
-          <Column field="comment" header="Комментарий"></Column>
-          <Column field="presence" header="Статус">
-            <template #body="slotProps">
-              <Tag :size="'small'" :severity="slotProps.data.status.type">{{ slotProps.data.status.name}}</Tag>
-            </template>
-          </Column>
-        </DataTable>
-      </div>
+      <template v-if="viewport.isLessThan('tablet')">
+        <div class="events-single__participation-list participation-list" v-if="participationList.length > 0">
+          <div class="participation-list__subheading">Предварительные участники ивента</div>
+          <DataTable
+            :value="participationList">
+            <Column field="username" header="Никнейм" >
+              <template #body="slotProps">
+                <div>
+                  {{ slotProps.data.username }}
+                  <span
+                    v-if="slotProps.data.classes"
+                    class="participation-cell__classes">{{ slotProps.data.classes }}</span>
+                </div>
+                <div
+                  v-if="slotProps.data.comment"
+                  class="participation-cell__comment">{{ slotProps.data.comment }}</div>
+              </template>
+            </Column>
+            <Column field="presence" header="Статус">
+              <template #body="slotProps">
+                <Tag :size="'small'" :severity="slotProps.data.status.type">{{ slotProps.data.status.name}}</Tag>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+      </template>
+      <template v-else>
+        <div class="events-single__participation-list participation-list" v-if="participationList.length > 0">
+          <div class="participation-list__subheading">Предварительные участники ивента</div>
+          <DataTable
+            :value="participationList">
+            <Column field="username" header="Никнейм"></Column>
+            <Column field="classes" header="Желаемый класс"></Column>
+            <Column field="comment" header="Комментарий"></Column>
+            <Column field="presence" header="Статус">
+              <template #body="slotProps">
+                <Tag :size="'small'" :severity="slotProps.data.status.type">{{ slotProps.data.status.name}}</Tag>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+      </template>
       <div
         v-if="participationAction.isVisible"
         class="events-single__actions" >
@@ -97,6 +125,8 @@ import EventsSingleHeader from "~/features/events/EventsSingleHeader.vue";
 
 const router = useRouter();
 
+const viewport = useViewport()
+
 const {
   event,
   participationList,
@@ -148,9 +178,16 @@ const onReturn = async () => {
 }
 
 .participation-list__subheading {
-  font-size: 24px;
-  font-weight: 600;
+  @include heading-3;
   margin-bottom: 30px;
 }
+
+.participation-cell__classes {
+  color: var(--p-primary-color);
+}
+.participation-cell__comment {
+  color: var(--p-text-muted-color);;
+}
+
 
 </style>

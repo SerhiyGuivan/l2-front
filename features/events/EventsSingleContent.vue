@@ -17,14 +17,12 @@
     font-weight: 400;
     font-size: 16px;
     ::v-deep(h2) {
-      font-size: 24px;
-      font-weight: 600;
+      @include heading-2;
       margin-bottom: 30px;
       color: var(--p-primary-color);
     }
     ::v-deep(h3) {
-      font-size: 24px;
-      font-weight: 600;
+      @include heading-3;
       margin-bottom: 30px;
     }
     ::v-deep(p) {
