@@ -3,5 +3,5 @@
 </template>
 
 <script lang="js" setup>
-import Login from "~/features/login/Login.vue";
+import Login from "~/features/auth/Login.vue";
 </script>

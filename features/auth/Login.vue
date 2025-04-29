@@ -6,11 +6,11 @@
       class="login__form">
       <FormField
         v-slot="$field"
-        name="identifier"
+        name="email"
         class="login__form-field">
         <InputText
           type="text"
-          placeholder="Логин"
+          placeholder="Email"
           fluid/>
         <Message
           v-if="$field?.invalid"
@@ -43,20 +43,22 @@
 
 <script lang="js" setup>
 import { useToast } from 'primevue/usetoast';
-const router = useRouter()
-const { login } = useStrapiAuth();
+const router = useRouter();
+const sb = useSupabaseClient();
 
 const toast = useToast();
 
 const resolver = ({ values }) => {
-  const errors = { identifier: [], password: [] };
+  const errors = { email: [], password: [] };
 
-  if (!values.identifier) {
-    errors.identifier.push({ type: 'required', message: 'Имя пользователя обязательно.' });
-  }
-
-  if (values.identifier?.length < 3) {
-    errors.identifier.push({ type: 'minimum', message: 'Имя пользователя должно содержать минимум 3 символа.' });
+  if (!values.email) {
+    errors.email.push({ type: 'required', message: 'Email обязателен.' });
+  } else {
+    // Проверка: формат email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(values.email)) {
+      errors.email.push({ type: 'format', message: 'Некорректный формат email.' });
+    }
   }
 
   if (!values.password) {
@@ -75,15 +77,15 @@ const resolver = ({ values }) => {
 
 const onFormSubmit = async ({valid, values}) => {
   if (!valid) {
-    toast.add({ severity: 'error', summary: 'Form is no valid.', life: 3000 });
+    toast.add({ severity: 'error', summary: 'Введите коректные данные.', life: 3000 });
     return
   }
   try {
-    await login(values);
+    const res = await sb.auth.signInWithPassword(values);
     router.push('/');
 
   } catch (e) {
-    toast.add({ severity: 'error', summary: e.error.message, life: 3000 });
+    toast.add({ severity: 'error', summary: e, life: 3000 });
   }
 }
 </script>

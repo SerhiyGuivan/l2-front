@@ -1,74 +1,143 @@
-import { computed } from 'vue'
-import {formatDate, getFormattedSingleEvent} from '~/features/events/utils'
-import type { EventData, FormattedEvent, Participation } from '~/features/events/types'
+import {formatEvent, formatParticipants, formatParticipation} from '~/features/events/utils'
+import {
+  createParticipation,
+  fetchEvent,
+  fetchParticipants,
+  fetchParticipationStatuses,
+  fetchUserParticipation, updateParticipation
+} from "~/features/events/api";
+import type {
+  FormattedEvent,
+  FormattedParticipation,
+  Participation,
+  UpdateParticipationPayload
+} from "~/features/events/types";
+import {useAsyncData, computed} from '#imports';
+import type {FormResolverOptions, FormSubmitEvent} from "@primevue/forms";
+import {useToast} from "primevue/usetoast";
 
 export function useEventSingle() {
-    const route = useRoute()
-    const {findOne, find} =useStrapi();
-    const client = useStrapiClient()
-    const user = useStrapiUser();
-    const { public: { strapiURL } } = useRuntimeConfig()
+  const toast = useToast();
+  const route = useRoute()
+  const eventId = computed(() => route.params.id as string)
+  const userId = computed(() => user.value?.id);
+  const sb = useSupabaseClient();
+  const user = useSupabaseUser();
 
-    const eventId = computed(() => route.params.id as string)
+  const {
+    data,
+    error,
+    status,
+    refresh
+  } = useAsyncData<{event: null | FormattedEvent, participants: FormattedParticipation[], userParticipation: null | FormattedParticipation }>(
+    `event:${eventId.value}`,
+    async () => {
+      const eventRaw = await fetchEvent(sb, eventId.value);
 
-    const {
-        data: fetchedData,
-        error,
-        refresh
-    } = useAsyncData(
-        `event-single:${eventId.value}`,
-        async () => {
-            const { data: eventRaw } = await findOne<EventData>('events', eventId.value, {})
+      if (!eventRaw) {
+        return { event: null, participants: [], userParticipation: null };
+      }
 
-            if (!eventRaw) {
-                return {eventRaw: null, participationListRaw: null, userParticipationRaw: null}
-            }
+      let participantsRaw: Participation[] = [];
+      let userParticipationRaw = null;
 
-            const participationListRaw = !eventRaw.closed ? await find<Participation>('participations', {
-                filters: { event: { documentId: { $eq: eventId.value } } },
-                sort: ['presence.order:asc'],
-                populate: { event: true, user: true, presence: true },
-            }) : null;
+      if (!eventRaw.closed) {
+        [participantsRaw, userParticipationRaw] = await Promise.all([
+          fetchParticipants(sb, eventId.value),
+          userId.value ? fetchUserParticipation(sb, eventId.value, userId.value) : null
+        ]);
+      }
 
+      return {
+        event: formatEvent(sb, eventRaw),
+        participants: participantsRaw.length ? formatParticipants(participantsRaw) : [],
+        userParticipation: userParticipationRaw ? formatParticipation(userParticipationRaw) : null,
+      };
+    },
+    {
+      server: true,
+      watch: [eventId, userId]
+    }
+  )
 
-            const userParticipationRaw = user.value && !eventRaw.closed ? await client<Participation>(
-                `/participations/me/event/${eventId.value}`,
-                { method: 'GET' }
-            ) : null
+  const { data: participationStatusesRaw } = useAsyncData('participation-statuses', async () => {
+    return await fetchParticipationStatuses(sb)
+  });
 
-            return {
-                eventRaw,
-                participationListRaw,
-                userParticipationRaw
-            }
-        },
-        {
-            watch: [user],
-            server: false
-        }
-    )
+  const event = computed(() => data.value?.event ?? null);
+  const participationList = computed(() => data.value?.participants ?? []);
+  const userParticipation = computed(() => data.value?.userParticipation ?? null);
+  const participationStatuses = computed(() => participationStatusesRaw.value ?? []);
 
-    const event = computed<FormattedEvent | null>(() => {
-        const eventRaw = fetchedData.value?.eventRaw ?? null;
-        return eventRaw ? getFormattedSingleEvent(eventRaw, strapiURL) : null;
-    })
+  const isVisibleDialog = ref(false);
 
-    const participationList = computed(() =>
-        fetchedData.value?.participationListRaw?.data?.map(p => ({
-            username: p.user.username,
-            classes: p.classes,
-            comment: p.comment,
-            presence: p.presence,
-        })) ?? []
-    )
+  const participationAction = computed(() => ({
+    isVisible: !!user.value && event.value?.closed === false && status.value === 'success',
+    type: !!userParticipation.value ? 'secondary' : 'success',
+    label: !!userParticipation.value ? 'Обновить информацию' : 'Принять участие',
+    handler: () => isVisibleDialog.value = true
+  }))
 
-    const userParticipation = computed(() => fetchedData.value?.userParticipationRaw ?? null);
+  const isSubmitting = ref(false);
+
+  const classesList = ["Боевой маг", "Лук", "EE", "Биш", "Варк", "СВС", "БД"];
+
+  const initialFormData = computed<UpdateParticipationPayload>(() => ({
+    status_id: userParticipation.value?.status.id ?? null,
+    comment: userParticipation.value?.comment ?? null,
+    classes: userParticipation.value?.classes ?? null,
+  }));
+
+  const formResolver = (data: FormResolverOptions) => {
+    const errors: Record<string, { type: string, message: string }[]> = { status_id: [] };
+
+    if (!data.values.status_id) {
+      errors.status_id.push({ type: 'required', message: 'Статус не может быть пустым!' });
+    }
 
     return {
-        event,
-        participationList,
-        userParticipation,
-        error,
-        refresh
+      values: data.values,
+      errors
+    };
+  };
+
+  const submitParticipation = async (data: FormSubmitEvent<UpdateParticipationPayload>) => {
+    if (!user.value || !data.valid) return
+    isSubmitting.value = true;
+
+    try {
+      if (userParticipation.value) {
+        await updateParticipation(sb, userParticipation.value.id, {
+          ...data.values
+        });
+      } else {
+        await createParticipation(sb, {
+          ...data.values,
+          event_id: Number(eventId.value),
+          profile_id: user.value.id
+        });
+      }
+      await refresh();
+    } catch {
+      toast.add({ severity: 'error', summary: 'Упс. Что-то пошло не так.', life: 3000 });
+    } finally {
+      isSubmitting.value = false;
+      isVisibleDialog.value = false;
     }
+  };
+
+  return {
+    event,
+    participationList,
+    userParticipation,
+    participationAction,
+    isVisibleDialog,
+    isSubmitting,
+    classesList,
+    participationStatuses,
+    initialFormData,
+    formResolver,
+    submitParticipation,
+    error,
+  }
 }
