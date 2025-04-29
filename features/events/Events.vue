@@ -51,8 +51,7 @@ const handleClick = (id: string) => {
   }
 
   &__heading {
-    font-size: 32px;
-    font-weight: 700;
+    @include heading-1;
     margin-bottom: 30px;
   }
 

@@ -5,7 +5,7 @@
 <script setup lang="ts">
 interface Props {
   type?: 'danger',
-  size? : 'large'
+  size? : 'large' | 'small'
 }
 const props = defineProps<Props>()
 

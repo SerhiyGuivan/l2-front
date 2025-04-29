@@ -9,7 +9,7 @@
       <h1 class="events-single-header__title">
         <Button
           class="events-single-header__return-btn"
-          :size="'large'"
+          :size="size"
           icon="pi pi-arrow-left"
           severity="contrast"
           variant="text"
@@ -21,7 +21,7 @@
         <ViewTag
           v-for="(tag, key) in tags"
           :type="tag.type"
-          :size="'large'"
+          :size="size"
           :key="key">{{ tag.label }}</ViewTag>
       </div>
       <div class="events-single-header__date">{{ date }}</div>
@@ -41,6 +41,12 @@ interface Props {
 }
 
 defineProps<Props>();
+
+const viewport = useViewport();
+
+const size = computed(() => {
+  return viewport.isLessThan('tablet') ? 'small' : 'large';
+})
 
 defineEmits<{
   (e: 'return'): void;
@@ -76,8 +82,7 @@ defineEmits<{
     padding: 15px;
   }
   &__title {
-    font-size: 36px;
-    font-weight: 700;
+    @include heading-1();
     margin-bottom: 30px;
     transform: translateZ(0);
     display: flex;
@@ -96,9 +101,8 @@ defineEmits<{
   }
   &__date {
     color: var(--p-text-muted-color);
-    font-weight: 400;
-    font-size: 18px;
     transform: translateZ(0);
+    @include heading-4;
   }
 }
 
