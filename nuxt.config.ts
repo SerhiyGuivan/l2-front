@@ -156,8 +156,8 @@ const MyPreset = definePreset(Aura, {
                     filledHoverBackground: '#2f323a',
                     filledFocusBackground: '#343841',
                     borderColor: '#2a2d34',
-                    hoverBorderColor: '#1f2228',          // Still hidden on hover
-                    focusBorderColor: '#1f2228',          // Hidden on focus
+                    hoverBorderColor: '#2a2d34',          // Still hidden on hover
+                    focusBorderColor: '#2a2d34',          // Hidden on focus
                     invalidBorderColor: '#e57373',        // Visible red border only on error
                     color: '#e0e0e0',
                     disabledColor: '#6c7077',
@@ -202,12 +202,16 @@ export default defineNuxtConfig({
     modules: [
         '@nuxtjs/strapi',
         '@primevue/nuxt-module',
-        '@nuxtjs/mdc'
+        '@nuxtjs/mdc',
+        '@nuxtjs/supabase'
     ],
     vite: {
         plugins: [
             tailwindcss(),
         ],
+    },
+    supabase: {
+        redirect: false
     },
     primevue: {
         options: {

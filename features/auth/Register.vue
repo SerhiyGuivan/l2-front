@@ -32,7 +32,6 @@
           size="small"
           variant="simple">{{ $field.error?.message }}</Message>
       </FormField>
-
       <FormField
         v-slot="$field"
         name="password"
@@ -58,9 +57,8 @@
 <script lang="js" setup>
 import { useToast } from 'primevue/usetoast';
 const router = useRouter()
-const { register } = useStrapiAuth();
-
 const toast = useToast();
+const sb = useSupabaseClient();
 
 const resolver = ({ values }) => {
   const errors = { username: [], email: [], password: [] };
@@ -109,7 +107,22 @@ const onFormSubmit = async ({valid, values}) => {
     return
   }
   try {
-    await register(values);
+    const { data, error } = await sb.auth.signUp({
+      email: values.email,
+      password: values.password,
+    })
+
+    if (data.user) {
+      const { error: profileError } = await sb.from('profiles').insert({
+        id: data.user.id,
+        name: values.username,
+      })
+
+      if (profileError) {
+        console.error('Profile insert error:', profileError.message)
+      }
+    }
+
     router.push('/');
 
   } catch (e) {

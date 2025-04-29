@@ -4,14 +4,13 @@
       <NuxtLink to="/" class="header__logo">
         <span>Rebel</span> Legion
       </NuxtLink>
-
       <Button
         v-if="!user"
         :severity="'success'"
         @click="onLogin">Войти</Button>
 
       <div v-if="user" class="header__profile">
-        <span class="header__hi"> Привет! <strong>{{user.username}}</strong> </span>
+        <span class="header__hi"> Привет! <strong>{{username}}</strong> </span>
         <Button :severity="'success'" @click="onLogout">Выйти</Button>
       </div>
     </div>
@@ -19,16 +18,33 @@
 </template>
 
 <script setup lang="ts">
-const user = useStrapiUser()
-const { logout } = useStrapiAuth()
+const sb = useSupabaseClient()
+const user = useSupabaseUser();
 const router = useRouter();
+
+const { data: username, error } = await useAsyncData('username', async () => {
+  if (user.value) {
+
+    const { data, error } = await sb
+      .from('profiles')
+      .select('name')
+      .eq('id', user.value.id)
+      .single()
+
+    if (error) {
+      return null
+    }
+    return data?.name || null
+  }
+  return null
+}, {watch: [user]})
 
 const onLogin = () => {
   router.push('/login');
 }
 
-const onLogout = () => {
-  logout();
+const onLogout = async () => {
+  await sb.auth.signOut();
 }
 </script>
 

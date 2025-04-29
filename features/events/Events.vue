@@ -2,12 +2,25 @@
   <div class="events">
     <div class="events__container">
       <h1 class="events__heading">Ивенты</h1>
-      <ViewGrid v-if="eventList.length">
+      <!-- Loading state -->
+      <div v-if="status === 'pending'" class="events__loading">Загрузка событий...</div>
+
+      <!-- Error state -->
+      <div v-else-if="status === 'error'" class="events__error">
+        Не удалось загрузить события. Попробуйте позже.
+      </div>
+
+      <!-- Events grid -->
+      <ViewGrid v-else-if="eventList?.length">
         <ViewGridItem
           v-for="event in eventList"
-          :key="event.documentId"
-          v-bind="event"
-          @click="() => onClick(event.documentId)"
+          :key="event.id"
+          :title="event.title"
+          :date="event.date"
+          :img="event.img"
+          :tags="event.tags"
+          :description="event.description"
+          @click="() => handleClick(event.id)"
         />
       </ViewGrid>
     </div>
@@ -15,41 +28,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useAsyncData, useRouter, useStrapi } from '#imports';
+import { useRouter } from '#imports';
 
 import ViewGrid from '~/shared/ViewGrid.vue';
 import ViewGridItem from '~/shared/ViewGridItem.vue';
-import type { EventData, FormattedEvent } from '~/features/events/types';
-import {formatDate, getFormattedEvent} from "~/features/events/utils";
+import {useEvents} from "~/features/events/useEvents";
 
-const { find } = useStrapi();
 const router = useRouter();
+const { eventList, status } = useEvents();
 
-const { public: { strapiURL }} = useRuntimeConfig();
-
-// Fetch event data
-const { data: eventsRaw } = await useAsyncData('events', () => find<EventData>('events'), {server: false});
-
-// Format it for the grid
-const eventList = computed<FormattedEvent[]>(() => {
-  const raw = eventsRaw.value;
-
-  // Return an empty array if raw or raw.data is not available
-  if (!raw || !raw.data) return [];
-
-  // Map through the data to structure it as FormattedEvent[]
-  return raw.data.map((event: EventData) => {
-    return getFormattedEvent(event, strapiURL);
-  });
-});
-
-// Handle click
-const onClick = (documentId: string): void => {
-  router.push(`/events/${documentId}`);
+const handleClick = (id: string) => {
+  router.push(`/events/${id}`);
 };
-
-
 </script>
 
 <style scoped lang="scss">
@@ -59,10 +49,18 @@ const onClick = (documentId: string): void => {
     max-width: 1440px;
     margin: 0 auto;
   }
+
   &__heading {
     font-size: 32px;
     font-weight: 700;
     margin-bottom: 30px;
+  }
+
+  &__loading,
+  &__error,
+  &__empty {
+    text-align: center;
+    margin-top: 50px;
   }
 }
 </style>

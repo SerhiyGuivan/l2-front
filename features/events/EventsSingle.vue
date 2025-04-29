@@ -8,56 +8,49 @@
       class="events-single__header"
       @return="onReturn"/>
     <div class="events-single__body">
-      <EventsSingleContent v-if="event.content" :value="event.content" class="events-single__content" />
-      <EventsSingleContent  v-if="event.results" :value="event.results" class="events-single__content" />
-
+      <EventsSingleContent v-if="event.content && !event.closed" :value="event.content" class="events-single__content" />
+      <EventsSingleContent v-if="event.result" :value="event.result" class="events-single__content" />
       <div class="events-single__participation-list participation-list" v-if="participationList.length > 0">
         <div class="participation-list__subheading">Предварительные участники ивента</div>
         <DataTable
           :value="participationList">
-          <Column field="username" header="Никнейм" :style="{ width: '300px'}"></Column>
+          <Column field="username" header="Никнейм"></Column>
           <Column field="classes" header="Желаемый класс"></Column>
           <Column field="comment" header="Комментарий"></Column>
-          <Column field="presence" header="Статус" :style="{ width: '300px'}">
+          <Column field="presence" header="Статус">
             <template #body="slotProps">
-              <Tag :size="'small'" :severity="slotProps.data.presence.type">{{ slotProps.data.presence.label}}</Tag>
+              <Tag :size="'small'" :severity="slotProps.data.status.type">{{ slotProps.data.status.name}}</Tag>
             </template>
           </Column>
         </DataTable>
       </div>
-
       <div
-        v-if="isVisibleSubmitParticipationActions"
+        v-if="participationAction.isVisible"
         class="events-single__actions" >
         <Button
-          :severity="'success'"
-          @click="setIsVisibleSubmitParticipationDialog(true)">Принять участие в ивенте</Button>
+          :severity="participationAction.type"
+          @click="participationAction.handler">{{ participationAction.label}}</Button>
       </div>
 
-      <div
-        v-if="isVisibleUpdateParticipationActions"
-        class="events-single__actions" >
-        <Button  @click="setIsVisibleSubmitParticipationDialog(true)" :severity="'secondary'">Обновить информацию</Button>
-      </div>
       <Dialog
-        v-model:visible="isVisibleSubmitParticipationDialog"
+        v-model:visible="isVisibleDialog"
         modal
         :header="'Принять участие в ивенте'"
         :style="{ maxWidth: '360px', width: '100%' }">
         <Form
-          :initial-values="initialSubmitParticipationFormData"
           @submit="submitParticipation"
-          :resolver="resolver"
+          :initial-values="initialFormData"
+          :resolver="formResolver"
           class="participation__form">
           <FormField
             v-slot="$field"
-            name="presence"
+            name="status_id"
             class="participation__form-field">
             <Select
-              name="presence"
-              :options="presences"
-              optionValue="documentId"
-              optionLabel="label"
+              name="status_id"
+              :options="participationStatuses"
+              optionValue="id"
+              optionLabel="name"
               placeholder="Выберите статус"
               fluid />
             <Message
@@ -73,7 +66,7 @@
             <Select
               showClear
               name="classes"
-              :options="classOptions"
+              :options="classesList"
               placeholder="Желаемый класс"
               fluid />
           </FormField>
@@ -88,8 +81,8 @@
             type="submit"
             severity="secondary"
             label="Подтвердить"
-            :loading="isLoadingSubmitParticipation"
-            :disabled="isLoadingSubmitParticipation"
+            :loading="isSubmitting"
+            :disabled="isSubmitting"
             fluid/>
         </Form>
       </Dialog>
@@ -98,8 +91,6 @@
 </template>
 
 <script setup lang="ts">
-import {useSubmitParticipation} from "~/features/events/useSubmitParticipation";
-import {usePresences} from "~/features/events/usePresences";
 import {useEventSingle} from "~/features/events/useEventSingle";
 import EventsSingleContent from "~/features/events/EventsSingleContent.vue";
 import EventsSingleHeader from "~/features/events/EventsSingleHeader.vue";
@@ -109,26 +100,16 @@ const router = useRouter();
 const {
   event,
   participationList,
-  userParticipation,
+  isVisibleDialog,
+  participationAction,
+  isSubmitting,
+  participationStatuses,
+  classesList,
+  initialFormData,
+  formResolver,
+  submitParticipation,
   error,
-  refresh
 } = useEventSingle()
-
-const {
-  classOptions,
-    initialSubmitParticipationFormData,
-    isVisibleSubmitParticipationActions,
-    isVisibleUpdateParticipationActions,
-    isVisibleSubmitParticipationDialog,
-    isLoadingSubmitParticipation,
-    setIsVisibleSubmitParticipationDialog,
-    resolver,
-    submitParticipation,
-} = useSubmitParticipation(event, userParticipation, refresh)
-
-const {
-  presences
-} = usePresences();
 
 const onReturn = async () => {
   await router.push("/events");
