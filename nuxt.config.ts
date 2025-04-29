@@ -200,7 +200,6 @@ export default defineNuxtConfig({
     compatibilityDate: '2024-11-01',
     devtools: {enabled: true},
     modules: [
-        '@nuxtjs/strapi',
         '@primevue/nuxt-module',
         '@nuxtjs/mdc',
         '@nuxtjs/supabase'

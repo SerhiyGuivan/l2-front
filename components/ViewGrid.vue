@@ -1,12 +1,10 @@
-<script setup lang="ts">
-
-</script>
-
 <template>
   <div class="view-grid">
     <slot></slot>
   </div>
 </template>
+
+<script setup lang="ts"></script>
 
 <style lang="scss" scoped>
   .view-grid {

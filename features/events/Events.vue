@@ -30,8 +30,8 @@
 <script setup lang="ts">
 import { useRouter } from '#imports';
 
-import ViewGrid from '~/shared/ViewGrid.vue';
-import ViewGridItem from '~/shared/ViewGridItem.vue';
+import ViewGrid from '~/components/ViewGrid.vue';
+import ViewGridItem from '~/components/ViewGridItem.vue';
 import {useEvents} from "~/features/events/useEvents";
 
 const router = useRouter();

@@ -18,7 +18,7 @@
 
 
 <script setup lang="ts">
-  import ViewTag from "#shared/ViewTag.vue";
+  import ViewTag from "~/components/ViewTag.vue";
 
   interface Props {
     img: string,

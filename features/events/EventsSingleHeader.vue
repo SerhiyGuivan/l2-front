@@ -31,7 +31,7 @@
 
 <script setup lang="ts">
 import type {FormattedTag} from "~/features/events/types";
-import ViewTag from "#shared/ViewTag.vue";
+import ViewTag from "~/components/ViewTag.vue";
 
 interface Props {
   title?: string,
